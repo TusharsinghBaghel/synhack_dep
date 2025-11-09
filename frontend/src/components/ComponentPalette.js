@@ -426,7 +426,6 @@ const ComponentPalette = ({ onPreviewSubtype }) => {
                 <span className="palette-item-icon">{icon}</span>
                 <div className="palette-item-info">
                   <div className="palette-item-label">{label}</div>
-                  <div className="palette-item-type">{type}</div>
                 </div>
               </div>
 

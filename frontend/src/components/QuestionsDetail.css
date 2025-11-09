@@ -1,10 +1,29 @@
 /* src/QuestionsDetail.css */
 
+/* Override root overflow when QuestionsDetail is active */
+#root:has(.detail-container),
+body:has(.detail-container),
+html:has(.detail-container) {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  height: auto !important;
+}
+
 .detail-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
-  padding: 2rem;
+  padding: 0;
+  padding-top: 70px; /* Add padding to account for fixed navbar */
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow-y: visible;
+  overflow-x: hidden;
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+.detail-container-content {
+  padding: 2rem;
 }
 
 .btn-back {
@@ -20,6 +39,7 @@
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 2rem;
+  margin-top: 1.5rem;
   font-size: 0.95rem;
 }
 
@@ -179,11 +199,12 @@
   backdrop-filter: blur(20px);
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: fadeInUp 0.6s ease 0.2s forwards;
   opacity: 0;
   scroll-margin-top: 2rem;
+  padding-bottom: 2rem;
 }
 
 .canvas-header {
@@ -195,6 +216,222 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-wrap: wrap;
   gap: 1.5rem;
+}
+
+/* Floating AI Assistive Ball - Android-like floating button */
+.ai-assistive-ball {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 50%, #6b7280 100%);
+  border: 3px solid rgba(107, 114, 128, 0.6);
+  box-shadow: 
+    0 0 20px rgba(107, 114, 128, 0.4),
+    0 0 40px rgba(107, 114, 128, 0.2),
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    inset 0 0 20px rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: visible;
+  border: none;
+  outline: none;
+}
+
+.ai-assistive-ball:hover {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 50%, #9ca3af 100%);
+  box-shadow: 
+    0 0 30px rgba(107, 114, 128, 0.6),
+    0 0 60px rgba(107, 114, 128, 0.4),
+    0 6px 30px rgba(0, 0, 0, 0.4),
+    inset 0 0 25px rgba(255, 255, 255, 0.15);
+}
+
+.ai-assistive-ball:hover .ai-ball-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-10px);
+  pointer-events: none;
+}
+
+.ai-assistive-ball:active {
+  transform: scale(0.95);
+}
+
+.ai-assistive-ball.active {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+  border: 3px solid rgba(255, 215, 0, 0.6);
+  box-shadow: 
+    0 0 30px rgba(255, 215, 0, 0.6),
+    0 0 60px rgba(255, 215, 0, 0.4),
+    0 4px 20px rgba(0, 0, 0, 0.3),
+    inset 0 0 20px rgba(255, 255, 255, 0.2);
+  animation: goldenGlowActive 2s ease-in-out infinite;
+}
+
+.ai-assistive-ball.active:hover {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+  box-shadow: 
+    0 0 40px rgba(255, 215, 0, 0.8),
+    0 0 80px rgba(255, 215, 0, 0.6),
+    0 6px 30px rgba(0, 0, 0, 0.4),
+    inset 0 0 25px rgba(255, 255, 255, 0.3);
+}
+
+/* Tooltip text above the button */
+.ai-ball-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+
+.ai-ball-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.85);
+}
+
+.ai-ball-icon {
+  font-size: 28px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  z-index: 2;
+  position: relative;
+}
+
+/* Pulsing ring effect when active */
+.ai-ball-pulse {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: rgba(255, 215, 0, 0.4);
+  animation: pulseRing 2s ease-out infinite;
+  z-index: 1;
+}
+
+/* Golden glow animation */
+@keyframes goldenGlow {
+  0%, 100% {
+    box-shadow: 
+      0 0 30px rgba(255, 215, 0, 0.6),
+      0 0 60px rgba(255, 215, 0, 0.4),
+      0 4px 20px rgba(0, 0, 0, 0.3),
+      inset 0 0 20px rgba(255, 255, 255, 0.2);
+  }
+  50% {
+    box-shadow: 
+      0 0 40px rgba(255, 215, 0, 0.8),
+      0 0 80px rgba(255, 215, 0, 0.6),
+      0 4px 20px rgba(0, 0, 0, 0.3),
+      inset 0 0 25px rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* More intense glow when active */
+@keyframes goldenGlowActive {
+  0%, 100% {
+    box-shadow: 
+      0 0 40px rgba(255, 215, 0, 0.8),
+      0 0 80px rgba(255, 215, 0, 0.6),
+      0 0 120px rgba(255, 215, 0, 0.4),
+      0 4px 20px rgba(0, 0, 0, 0.3),
+      inset 0 0 25px rgba(255, 255, 255, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 50px rgba(255, 215, 0, 1),
+      0 0 100px rgba(255, 215, 0, 0.8),
+      0 0 150px rgba(255, 215, 0, 0.5),
+      0 4px 20px rgba(0, 0, 0, 0.3),
+      inset 0 0 30px rgba(255, 255, 255, 0.4);
+  }
+}
+
+/* Pulsing ring animation */
+@keyframes pulseRing {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Light theme support */
+[data-theme="light"] .ai-assistive-ball {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 50%, #9ca3af 100%);
+  box-shadow: 
+    0 0 20px rgba(107, 114, 128, 0.3),
+    0 0 40px rgba(107, 114, 128, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.15),
+    inset 0 0 20px rgba(255, 255, 255, 0.2);
+}
+
+[data-theme="light"] .ai-assistive-ball:hover {
+  background: linear-gradient(135deg, #d1d5db 0%, #9ca3af 50%, #d1d5db 100%);
+  box-shadow: 
+    0 0 30px rgba(107, 114, 128, 0.4),
+    0 0 60px rgba(107, 114, 128, 0.25),
+    0 6px 30px rgba(0, 0, 0, 0.2),
+    inset 0 0 25px rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] .ai-assistive-ball.active {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+  box-shadow: 
+    0 0 30px rgba(255, 215, 0, 0.5),
+    0 0 60px rgba(255, 215, 0, 0.3),
+    0 4px 20px rgba(0, 0, 0, 0.2),
+    inset 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+[data-theme="light"] .ai-assistive-ball.active:hover {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 50%, #ffd700 100%);
+  box-shadow: 
+    0 0 40px rgba(255, 215, 0, 0.7),
+    0 0 80px rgba(255, 215, 0, 0.5),
+    0 4px 20px rgba(0, 0, 0, 0.2),
+    inset 0 0 25px rgba(255, 255, 255, 0.4);
+}
+
+[data-theme="light"] .ai-ball-pulse {
+  background: rgba(255, 215, 0, 0.3);
+}
+
+[data-theme="light"] .ai-ball-tooltip {
+  background: rgba(0, 0, 0, 0.9);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="light"] .ai-ball-tooltip::after {
+  border-top-color: rgba(0, 0, 0, 0.9);
 }
 
 .canvas-title h2 {
@@ -235,8 +472,19 @@
 }
 
 .simulator-wrapper {
-  height: 100vh;
-  overflow-y: auto; /* now the wrapper itself scrolls */
+  min-height: 800px;
+  height: auto;
+  width: 100%;
+  position: relative;
+  overflow: visible;
+  padding: 1rem;
+}
+
+/* Solutions Section */
+.solutions-section {
+  max-width: 1600px;
+  margin: 3rem auto;
+  padding: 0;
 }
 
 
@@ -286,8 +534,24 @@
 @media (max-width: 768px) {
   .detail-container {
     padding: 1rem;
+    padding-top: 120px; /* Account for taller navbar on mobile */
   }
-
+  
+  .detail-container-content {
+    padding: 1rem;
+  }
+  
+  .ai-assistive-ball {
+    width: 55px;
+    height: 55px;
+    bottom: 20px;
+    right: 20px;
+  }
+  
+  .ai-ball-icon {
+    font-size: 24px;
+  }
+  
   .detail-header {
     padding: 1.5rem;
   }
@@ -339,9 +603,38 @@
 
   .simulator-wrapper {
     min-height: 600px;
+    height: auto;
+  }
+  
+  .detail-container .app {
+    min-height: 600px !important;
   }
 }
 
-body, html {
-  overflow-y: scroll !important;
+/* Override App.css fixed heights when App is inside detail-container */
+.detail-container .app {
+  height: auto !important;
+  min-height: 800px;
+  overflow: visible !important;
+  display: block !important;
 }
+
+.detail-container .app-content {
+  overflow: visible !important;
+  height: auto !important;
+  flex-wrap: wrap;
+  display: flex !important;
+}
+
+.detail-container .canvas-container {
+  min-height: 600px;
+  height: auto;
+  overflow: visible !important;
+}
+
+/* Ensure ReactFlow can display properly */
+.detail-container .react-flow {
+  height: 600px !important;
+  min-height: 600px;
+}
+

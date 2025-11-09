@@ -15,6 +15,9 @@ public class Link {
     private LinkType type;
     private HeuristicProfile heuristics = new HeuristicProfile();
     private Map<String, Object> properties = new HashMap<>();
+    // Explicit IDs for stable serialization
+    private String sourceId; // mirrors source.getId()
+    private String targetId; // mirrors target.getId()
 
     public Link() {}
 
@@ -23,6 +26,25 @@ public class Link {
         this.source = source;
         this.target = target;
         this.type = type;
+        if (source != null) this.sourceId = source.getId();
+        if (target != null) this.targetId = target.getId();
     }
 
+    public void setSource(Component source) {
+        this.source = source;
+        this.sourceId = source != null ? source.getId() : null;
+    }
+
+    public void setTarget(Component target) {
+        this.target = target;
+        this.targetId = target != null ? target.getId() : null;
+    }
+
+    public String getSourceId() {
+        return sourceId != null ? sourceId : (source != null ? source.getId() : null);
+    }
+
+    public String getTargetId() {
+        return targetId != null ? targetId : (target != null ? target.getId() : null);
+    }
 }

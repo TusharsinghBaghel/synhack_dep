@@ -19,8 +19,8 @@ const ComponentNameModal = ({ componentType, subtype, onConfirm, onCancel }) => 
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content component-name-modal">
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-content component-name-modal" onClick={(e) => e.stopPropagation()}>
         <h2>Name Your Component</h2>
         <p className="modal-subtitle">
           Type: <strong>{getTypeDisplay()}</strong>

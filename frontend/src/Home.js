@@ -6,6 +6,7 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import QuestionsList from "./components/QuestionsList";
 import PostQuestionModal from "./components/PostQuestionModal";
+import UserProfileModal from "./components/UserProfileModal";
 import App from "./App"; // Import your existing App.js directly
 import "./Home.css";
 
@@ -16,6 +17,7 @@ function Home() {
   const [myQuestions, setMyQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSimulator, setShowSimulator] = useState(false);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const navigate = useNavigate();
@@ -129,6 +131,7 @@ function Home() {
         onRandomQuestion={handleRandomQuestion}
         onPostQuestion={() => setShowModal(true)}
         onOpenSimulator={() => setShowSimulator(true)}
+        onOpenProfile={() => setShowProfileModal(true)}
       />
       
       <div className="home-layout">
@@ -148,6 +151,13 @@ function Home() {
         <PostQuestionModal
           onClose={() => setShowModal(false)}
           onSuccess={handlePostSuccess}
+          token={token}
+        />
+      )}
+
+      {showProfileModal && (
+        <UserProfileModal
+          onClose={() => setShowProfileModal(false)}
           token={token}
         />
       )}

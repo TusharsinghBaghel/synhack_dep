@@ -18,6 +18,7 @@ import EvaluationPanel from './components/EvaluationPanel';
 import SubtypeModal from './components/SubtypeModal';
 import LinkTypeModal from './components/LinkTypeModal';
 import ComponentNameModal from './components/ComponentNameModal';
+import ToastNotification from './components/ToastNotification';
 import { componentAPI, linkAPI, architectureAPI } from './api';
 
 const nodeTypes = {
@@ -33,7 +34,23 @@ const COMPONENTS_WITH_SUBTYPES = [
   'LOAD_BALANCER',
 ];
 
-function App() {
+// Utility function to decode user ID from JWT token
+const getUserIdFromToken = () => {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) return null;
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    return payload.id;
+  } catch (err) {
+    console.error('Error decoding token:', err);
+    return null;
+  }
+};
+
+// Note: objectIdToInt function removed - we now use ObjectId strings directly
+// The Java backend has been updated to accept String instead of Integer
+
+function App({ questionId: propQuestionId = null, userId: propUserId = null, onLoadSolution = null, solutionArchitectureId = null, aiMode = false, questionData = null }) {
   const reactFlowWrapper = useRef(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -47,6 +64,8 @@ function App() {
 
   const [architectureId, setArchitectureId] = useState(null);
   const [architectureName, setArchitectureName] = useState('My Architecture');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCreatingArchitecture, setIsCreatingArchitecture] = useState(false);
   const [linkTypes, setLinkTypes] = useState([]);
   const [showEvaluation, setShowEvaluation] = useState(false);
   const [evaluation, setEvaluation] = useState(null);
@@ -62,14 +81,173 @@ function App() {
   const [showNameModal, setShowNameModal] = useState(false);
   const [pendingComponentWithSubtype, setPendingComponentWithSubtype] = useState(null);
 
-  const [showSubmitModal, setShowSubmitModal] = useState(false);
-  const [submitUserId, setSubmitUserId] = useState('');
-  const [submitQuestionId, setSubmitQuestionId] = useState('');
+  const loadLinkTypes = useCallback(async () => {
+    try {
+      const response = await linkAPI.getTypes();
+      setLinkTypes(response.data);
+    } catch (error) {
+      console.error('Failed to load link types:', error);
+    }
+  }, []);
 
+  const showNotification = useCallback((message, type = 'info', duration = 4000) => {
+    setNotification({ message, type, duration });
+  }, []);
+
+  const createNewArchitecture = useCallback(async () => {
+    // Prevent duplicate creation
+    if (isCreatingArchitecture || architectureId) {
+      return;
+    }
+    
+    setIsCreatingArchitecture(true);
+    try {
+      const nameToSend = architectureName && architectureName.trim() ? architectureName.trim() : 'My Architecture';
+      console.log('Creating architecture with name:', nameToSend);
+      const response = await architectureAPI.create({ name: nameToSend });
+      console.log('Architecture created, response name:', response.data.name);
+      setArchitectureId(response.data.id);
+      setArchitectureName(response.data.name);
+      showNotification('Architecture created successfully', 'success');
+    } catch (error) {
+      showNotification('Failed to create architecture', 'error');
+      console.error('Failed to create architecture:', error);
+    } finally {
+      setIsCreatingArchitecture(false);
+    }
+  }, [architectureName, showNotification, isCreatingArchitecture, architectureId]);
+
+  const loadArchitecture = useCallback(async (architectureId) => {
+    try {
+      const response = await architectureAPI.getById(architectureId);
+      const architecture = response.data;
+
+      // Clear existing canvas
+      setNodes([]);
+      setEdges([]);
+
+      // Convert components to ReactFlow nodes
+      const loadedNodes = architecture.components.map(comp => ({
+        id: `node-${comp.id}`,
+        type: 'component',
+        position: comp.position || { x: Math.random() * 500, y: Math.random() * 500 }, // fallback for old data
+        data: {
+          label: comp.name,
+          componentType: comp.type,
+          componentId: comp.id,
+          heuristics: comp.heuristics,
+          properties: comp.properties,
+          subtype: comp.properties?.subtype
+        }
+      }));
+
+      // Convert links to ReactFlow edges
+      const loadedEdges = architecture.links.map(link => {
+        // Extract source and target IDs from various possible structures
+        let sourceId, targetId;
+
+        if (link.source) {
+          // If source is an object with id property
+          sourceId = typeof link.source === 'object' ? link.source.id : link.source;
+        } else if (link.sourceId) {
+          sourceId = link.sourceId;
+        }
+
+        if (link.target) {
+          // If target is an object with id property
+          targetId = typeof link.target === 'object' ? link.target.id : link.target;
+        } else if (link.targetId) {
+          targetId = link.targetId;
+        }
+
+        if (!sourceId || !targetId) {
+          console.error('Link missing source or target:', link);
+          return null;
+        }
+
+        return {
+          id: link.id,
+          source: `node-${sourceId}`,
+          target: `node-${targetId}`,
+          type: 'smoothstep',
+          animated: true,
+          label: (link.type || link.linkType || '').replace(/_/g, ' '),
+          data: {
+            linkId: link.id,
+            linkType: link.type || link.linkType,
+            heuristics: link.heuristics
+          }
+        };
+      }).filter(edge => edge !== null); // Remove any null edges from invalid links
+
+      setNodes(loadedNodes);
+      setEdges(loadedEdges);
+      setArchitectureId(architecture.id);
+      setArchitectureName(architecture.name);
+
+      showNotification('Architecture loaded successfully', 'success');
+    } catch (error) {
+      showNotification('Failed to load architecture', 'error');
+      console.error('Failed to load architecture:', error);
+    }
+  }, [showNotification, setNodes, setEdges]);
+
+  const copyAndLoadArchitecture = useCallback(async (sourceArchitectureId, newName = null) => {
+    try {
+      const response = await architectureAPI.copy(sourceArchitectureId, newName ? { name: newName } : {});
+      const copiedArchitecture = response.data;
+
+      // Load the copied architecture onto canvas
+      await loadArchitecture(copiedArchitecture.id);
+
+      showNotification(`Architecture "${copiedArchitecture.name}" loaded for editing`, 'success');
+    } catch (error) {
+      showNotification('Failed to copy architecture', 'error');
+      console.error('Failed to copy architecture:', error);
+    }
+  }, [loadArchitecture, showNotification]);
+
+  // Initialize: load link types and create architecture only once on mount
   useEffect(() => {
     loadLinkTypes();
-    createNewArchitecture();
-  }, []);
+  }, [loadLinkTypes]);
+
+  // Create new architecture only if no solution is being loaded and no architecture exists
+  useEffect(() => {
+    if (!solutionArchitectureId && !architectureId && !isCreatingArchitecture) {
+      createNewArchitecture();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
+
+  // Load solution architecture when solutionArchitectureId changes
+  useEffect(() => {
+    if (solutionArchitectureId) {
+      copyAndLoadArchitecture(solutionArchitectureId);
+    }
+  }, [solutionArchitectureId, copyAndLoadArchitecture]);
+
+  // Update architecture name when it changes (debounced)
+  useEffect(() => {
+    if (!architectureId) return; // Don't update if architecture hasn't been created yet
+    // Remove the check for 'My Architecture' - always update if name changes
+    // The user might want to keep "My Architecture" as the name
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        const nameToUpdate = architectureName && architectureName.trim() ? architectureName.trim() : 'My Architecture';
+        console.log('Updating architecture name to:', nameToUpdate);
+        const response = await architectureAPI.update(architectureId, { name: nameToUpdate });
+        console.log('Architecture name updated, response name:', response.data.name);
+        // Silently update - no notification to avoid spam
+      } catch (error) {
+        console.error('Failed to update architecture name:', error);
+        // Don't show error notification for name updates to avoid spam
+      }
+    }, 500); // Wait 500ms after user stops typing (reduced from 1000ms)
+
+    return () => clearTimeout(timeoutId);
+  }, [architectureName, architectureId]);
 
   // Handler passed to ComponentPalette so it can notify App about a preview/selection
   const handlePreviewSubtype = useCallback((componentType, subtype) => {
@@ -92,31 +270,56 @@ function App() {
     }
   }, [selectedNode, selectedEdge]);
 
-  const loadLinkTypes = async () => {
+  // createConnection now accepts optional tempEdgeId to replace the optimistic edge
+  const createConnection = useCallback(async (params, sourceNode, targetNode, linkType, tempEdgeId = null) => {
     try {
-      const response = await linkAPI.getTypes();
-      setLinkTypes(response.data);
-    } catch (error) {
-      console.error('Failed to load link types:', error);
-    }
-  };
+      const validationResponse = await linkAPI.validate({
+        sourceId: sourceNode.data.componentId,
+        targetId: targetNode.data.componentId,
+        linkType: linkType,
+      });
 
-  const createNewArchitecture = async () => {
-    try {
-      const response = await architectureAPI.create({ name: architectureName });
-      setArchitectureId(response.data.id);
-      setArchitectureName(response.data.name);
-      showNotification('Architecture created successfully', 'success');
-    } catch (error) {
-      showNotification('Failed to create architecture', 'error');
-      console.error('Failed to create architecture:', error);
-    }
-  };
+      if (!validationResponse.data.valid) {
+        showNotification(validationResponse.data.message || 'Invalid connection', 'error');
+        if (tempEdgeId) setEdges((eds) => eds.filter((e) => e.id !== tempEdgeId));
+        return;
+      }
 
-  const showNotification = (message, type = 'info') => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 3000);
-  };
+      const linkResponse = await linkAPI.create({
+        sourceId: sourceNode.data.componentId,
+        targetId: targetNode.data.componentId,
+        linkType: linkType,
+      });
+
+      const finalEdge = {
+        ...params,
+        id: linkResponse.data.id,
+        type: 'smoothstep',
+        animated: true,
+        label: (linkType || '').replace(/_/g, ' '),
+        data: {
+          linkId: linkResponse.data.id,
+          linkType: linkType,
+          heuristics: linkResponse.data.heuristics,
+        },
+      };
+
+      setEdges((eds) => {
+        const withoutTemp = tempEdgeId ? eds.filter((e) => e.id !== tempEdgeId) : eds;
+        return addEdge(finalEdge, withoutTemp);
+      });
+
+      if (architectureId) {
+        await architectureAPI.addLink(architectureId, { linkId: linkResponse.data.id });
+      }
+
+      showNotification('Connection created successfully', 'success');
+    } catch (error) {
+      showNotification(error.response?.data?.error || 'Failed to create connection', 'error');
+      console.error('Failed to create connection:', error);
+      if (tempEdgeId) setEdges((eds) => eds.filter((e) => e.id !== tempEdgeId));
+    }
+  }, [architectureId, showNotification, setEdges]);
 
   const onConnect = useCallback(
       async (params) => {
@@ -181,59 +384,8 @@ function App() {
           setEdges((eds) => eds.filter((e) => e.id !== tempId));
         }
       },
-      [nodes, edges, architectureId, linkTypes, setEdges]
+      [nodes, linkTypes, setEdges, createConnection, showNotification]
   );
-
-  // createConnection now accepts optional tempEdgeId to replace the optimistic edge
-  const createConnection = async (params, sourceNode, targetNode, linkType, tempEdgeId = null) => {
-    try {
-      const validationResponse = await linkAPI.validate({
-        sourceId: sourceNode.data.componentId,
-        targetId: targetNode.data.componentId,
-        linkType: linkType,
-      });
-
-      if (!validationResponse.data.valid) {
-        showNotification(validationResponse.data.message || 'Invalid connection', 'error');
-        if (tempEdgeId) setEdges((eds) => eds.filter((e) => e.id !== tempEdgeId));
-        return;
-      }
-
-      const linkResponse = await linkAPI.create({
-        sourceId: sourceNode.data.componentId,
-        targetId: targetNode.data.componentId,
-        linkType: linkType,
-      });
-
-      const finalEdge = {
-        ...params,
-        id: linkResponse.data.id,
-        type: 'smoothstep',
-        animated: true,
-        label: (linkType || '').replace(/_/g, ' '),
-        data: {
-          linkId: linkResponse.data.id,
-          linkType: linkType,
-          heuristics: linkResponse.data.heuristics,
-        },
-      };
-
-      setEdges((eds) => {
-        const withoutTemp = tempEdgeId ? eds.filter((e) => e.id !== tempEdgeId) : eds;
-        return addEdge(finalEdge, withoutTemp);
-      });
-
-      if (architectureId) {
-        await architectureAPI.addLink(architectureId, { linkId: linkResponse.data.id });
-      }
-
-      showNotification('Connection created successfully', 'success');
-    } catch (error) {
-      showNotification(error.response?.data?.error || 'Failed to create connection', 'error');
-      console.error('Failed to create connection:', error);
-      if (tempEdgeId) setEdges((eds) => eds.filter((e) => e.id !== tempEdgeId));
-    }
-  };
 
   const onDragOver = useCallback((event) => {
     event.preventDefault();
@@ -249,6 +401,7 @@ function App() {
             type: type,
             name: customName || `${type}-${Date.now()}`,
             properties: properties,
+            position: { x: position.x, y: position.y }, // Send position to backend
           });
 
           const newNode = {
@@ -387,12 +540,66 @@ function App() {
     }
 
     try {
-      const response = await architectureAPI.evaluate({
-        architectureId: architectureId,
-      });
-      setEvaluation(response.data);
-      setShowEvaluation(true);
-      showNotification('Architecture evaluated successfully', 'success');
+      if (aiMode && questionData) {
+        // AI Mode: Call the AI evaluation endpoint
+        showNotification('Evaluating with AI...', 'info', 6000); // Longer duration for AI evaluation
+        
+        // Fetch the architecture data
+        const archResponse = await architectureAPI.getById(architectureId);
+        const architecture = archResponse.data;
+        
+        // Build architecture object similar to MongoDB structure
+        const architectureData = {
+          id: architecture.id,
+          name: architecture.name,
+          components: architecture.components || [],
+          links: architecture.links || [],
+        };
+        
+        // Prepare question text
+        const questionText = `${questionData.qtitle}\n\n${questionData.qdes || ''}`;
+        
+        // Call AI endpoint
+        const aiResponse = await fetch('https://tusharsinghbaghel-synhack.hf.space/evaluate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            question: questionText,
+            architecture: architectureData,
+          }),
+        });
+        
+        if (!aiResponse.ok) {
+          throw new Error(`AI evaluation failed: ${aiResponse.statusText}`);
+        }
+        
+        const aiData = await aiResponse.json();
+        
+        // Transform AI response to match EvaluationPanel format
+        const transformedEvaluation = {
+          overallScore: Object.values(aiData.heuristic_scores || {}).reduce((sum, val) => sum + val, 0) / (Object.keys(aiData.heuristic_scores || {}).length || 1),
+          parameterScores: aiData.heuristic_scores || {},
+          insights: aiData.suggestion ? [aiData.suggestion] : [],
+          componentCount: architecture.components?.length || 0,
+          linkCount: architecture.links?.length || 0,
+          valid: true,
+          isAiMode: true, // Flag to indicate AI mode response
+        };
+        
+        setEvaluation(transformedEvaluation);
+        setShowEvaluation(true);
+        showNotification('Architecture evaluated successfully with AI', 'success');
+      } else {
+        // Regular Mode: Use existing evaluation
+        const response = await architectureAPI.evaluate({
+          architectureId: architectureId,
+        });
+        setEvaluation(response.data);
+        setShowEvaluation(true);
+        showNotification('Architecture evaluated successfully', 'success');
+      }
     } catch (error) {
       showNotification('Failed to evaluate architecture', 'error');
       console.error('Failed to evaluate architecture:', error);
@@ -424,48 +631,85 @@ function App() {
   };
 
   const submitArchitecture = async () => {
+    // Prevent multiple submissions
+    if (isSubmitting) {
+      showNotification('Submission already in progress...', 'info');
+      return;
+    }
+
     if (!architectureId) {
       showNotification('No architecture to submit', 'error');
       return;
     }
 
-    // Open modal to get userId and questionId
-    setShowSubmitModal(true);
-  };
+    // Get userId and questionId from props or token
+    const userId = propUserId || getUserIdFromToken();
+    const questionId = propQuestionId;
 
-  const handleSubmitConfirm = async () => {
-    if (!submitUserId || !submitQuestionId) {
-      showNotification('Please enter both User ID and Question ID', 'warning');
-      return;
+    // If we have both userId and questionId, submit automatically
+    if (userId && questionId) {
+      setIsSubmitting(true);
+      try {
+        // First, check if architecture is already submitted
+        try {
+          const archResponse = await architectureAPI.getById(architectureId);
+          if (archResponse.data.submitted) {
+            showNotification('This architecture has already been submitted', 'warning');
+            setIsSubmitting(false);
+            return;
+          }
+        } catch (checkError) {
+          console.warn('Failed to check architecture status:', checkError);
+          // Continue with submit even if check fails
+        }
+
+        // First, update the architecture name to ensure it's current
+        try {
+          const nameToSubmit = architectureName && architectureName.trim() ? architectureName.trim() : 'My Architecture';
+          console.log('Updating architecture name before submit to:', nameToSubmit);
+          const updateResponse = await architectureAPI.update(architectureId, { name: nameToSubmit });
+          console.log('Name updated before submit, response name:', updateResponse.data.name);
+        } catch (updateError) {
+          console.warn('Failed to update architecture name before submit:', updateError);
+          // Continue with submit even if name update fails
+        }
+
+        // Send ObjectId strings directly (Java backend now accepts String instead of Integer)
+        const response = await architectureAPI.submit(architectureId, {
+          userId: userId,
+          questionId: questionId,
+        });
+
+        showNotification('Architecture submitted successfully!', 'success');
+        
+        // Reload the page after a short delay to show the success message
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      } catch (error) {
+        showNotification('Failed to submit architecture', 'error');
+        console.error('Failed to submit architecture:', error);
+        setIsSubmitting(false);
+      }
+    } else {
+      // Fallback: if props not provided, show error
+      showNotification(
+        userId 
+          ? 'Question ID is required to submit' 
+          : questionId 
+          ? 'User ID is required to submit' 
+          : 'User ID and Question ID are required to submit',
+        'error'
+      );
     }
-
-    try {
-      const response = await architectureAPI.submit(architectureId, {
-        userId: parseInt(submitUserId),
-        questionId: parseInt(submitQuestionId),
-      });
-
-      showNotification('Architecture submitted successfully!', 'success');
-      setShowSubmitModal(false);
-      setSubmitUserId('');
-      setSubmitQuestionId('');
-    } catch (error) {
-      showNotification('Failed to submit architecture', 'error');
-      console.error('Failed to submit architecture:', error);
-    }
-  };
-
-  const handleSubmitCancel = () => {
-    setShowSubmitModal(false);
-    setSubmitUserId('');
-    setSubmitQuestionId('');
   };
 
   const clearCanvas = () => {
     if (window.confirm('Are you sure you want to clear the canvas?')) {
       setNodes([]);
       setEdges([]);
-      createNewArchitecture();
+      // Don't create a new architecture - just clear the canvas
+      // The existing architecture will be reused
     }
   };
 
@@ -526,14 +770,13 @@ function App() {
 
   return (
       <div className="app">
-        {notification && (
-            <div className={`notification notification-${notification.type}`}>
-              {notification.message}
-            </div>
-        )}
+        <ToastNotification 
+          notification={notification} 
+          onClose={() => setNotification(null)} 
+        />
 
         <div className="app-header">
-          <h1>🏗️ System Design Simulator</h1>
+          <h1>System Design Simulator</h1>
           <div className="header-actions">
             <input
                 type="text"
@@ -542,11 +785,12 @@ function App() {
                 className="architecture-name-input"
                 placeholder="Architecture name"
             />
-            <button onClick={validateArchitecture} className="btn btn-secondary">
-              Validate
-            </button>
-            <button onClick={submitArchitecture} className="btn btn-success">
-              Submit
+            <button 
+              onClick={submitArchitecture} 
+              className="btn btn-success"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>
             <button onClick={evaluateArchitecture} className="btn btn-primary">
               Evaluate
@@ -584,7 +828,23 @@ function App() {
               >
                 <Background />
                 <Controls />
-                <MiniMap />
+                <MiniMap 
+                  nodeColor={(node) => {
+                    // Use bright purple accent color for nodes in minimap for better visibility
+                    return '#667eea';
+                  }}
+                  nodeStrokeColor={(node) => {
+                    return '#ffffff';
+                  }}
+                  nodeStrokeWidth={2}
+                  maskColor="rgba(102, 126, 234, 0.2)"
+                  maskStrokeColor="rgba(102, 126, 234, 0.8)"
+                  style={{
+                    backgroundColor: 'rgba(11, 15, 20, 0.95)',
+                  }}
+                  pannable={true}
+                  zoomable={true}
+                />
                 <Panel position="top-left" className="canvas-info">
                   <div className="info-item">
                     <strong>Components:</strong> {nodes.length}
@@ -639,49 +899,6 @@ function App() {
                 onConfirm={handleNameConfirm}
                 onCancel={handleNameCancel}
             />
-        )}
-
-        {showSubmitModal && (
-            <div className="modal-overlay">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h2>Submit Architecture</h2>
-                  <button className="close-btn" onClick={handleSubmitCancel}>×</button>
-                </div>
-                <div className="modal-body">
-                  <div className="form-group">
-                    <label htmlFor="userId">User ID:</label>
-                    <input
-                        type="number"
-                        id="userId"
-                        value={submitUserId}
-                        onChange={(e) => setSubmitUserId(e.target.value)}
-                        placeholder="Enter your User ID"
-                        className="form-input"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label htmlFor="questionId">Question ID:</label>
-                    <input
-                        type="number"
-                        id="questionId"
-                        value={submitQuestionId}
-                        onChange={(e) => setSubmitQuestionId(e.target.value)}
-                        placeholder="Enter Question ID"
-                        className="form-input"
-                    />
-                  </div>
-                </div>
-                <div className="modal-footer">
-                  <button onClick={handleSubmitCancel} className="btn btn-secondary">
-                    Cancel
-                  </button>
-                  <button onClick={handleSubmitConfirm} className="btn btn-success">
-                    Submit
-                  </button>
-                </div>
-              </div>
-            </div>
         )}
       </div>
   );

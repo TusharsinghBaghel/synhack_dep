@@ -1,5 +1,6 @@
 /* Modern dark theme — refreshed, compact, professional */
-:root{
+:root,
+[data-theme="dark"] {
   --bg-900:#06070a;
   --bg-800:#0b0f14;
   --panel:#0f1724;
@@ -10,10 +11,30 @@
   --glass: rgba(255,255,255,0.035);
   --card-border: rgba(255,255,255,0.04);
   --white:#eef2ff;
+  --text-primary:#eef2ff;
+  --text-secondary:#98a2b3;
   --radius:12px;
   --shadow: 0 6px 20px rgba(2,6,23,0.55);
   --soft-shadow: 0 4px 12px rgba(2,6,23,0.45);
   --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Segoe UI Mono";
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --bg-900:#f8fafc;
+  --bg-800:#f1f5f9;
+  --panel:#ffffff;
+  --muted:#64748b;
+  --accent-1:#7c5cff; /* purple */
+  --accent-2:#06b6d4; /* teal */
+  --accent-3:#f59e0b; /* amber */
+  --glass: rgba(0,0,0,0.02);
+  --card-border: rgba(0,0,0,0.08);
+  --white:#ffffff;
+  --text-primary:#1e293b;
+  --text-secondary:#64748b;
+  --shadow: 0 6px 20px rgba(0,0,0,0.1);
+  --soft-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 /* Base */
@@ -22,11 +43,12 @@ html,body,#root { height:100%; }
 body {
   margin:0;
   background: linear-gradient(180deg, var(--bg-900), var(--bg-800));
-  color: var(--white);
+  color: var(--text-primary);
   font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
   font-size:14px;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* App layout */
@@ -42,9 +64,10 @@ body {
   align-items:center;
   justify-content:space-between;
   padding:18px 22px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  background: var(--glass);
   border-bottom:1px solid var(--card-border);
   backdrop-filter: blur(6px);
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 .app-header h1 {
   margin:0;
@@ -53,7 +76,7 @@ body {
   gap:10px;
   font-size:18px;
   font-weight:700;
-  color:var(--white);
+  color:var(--text-primary);
   letter-spacing:0.2px;
 }
 .header-actions {
@@ -64,13 +87,14 @@ body {
 
 /* Inputs & Buttons */
 .architecture-name-input {
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-  color:var(--white);
+  background: var(--glass);
+  color:var(--text-primary);
   border:1px solid var(--card-border);
   padding:8px 12px;
   border-radius:10px;
   min-width:220px;
   outline:none;
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 .architecture-name-input:focus{
   box-shadow:0 6px 18px rgba(124,92,255,0.12);
@@ -94,9 +118,10 @@ body {
 }
 .btn-secondary {
   background:transparent;
-  color:var(--white);
-  border:1px solid rgba(255,255,255,0.04);
+  color:var(--text-primary);
+  border:1px solid var(--card-border);
   backdrop-filter: blur(6px);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 .btn-danger {
   background: linear-gradient(90deg,#ef4444,#c02626);
@@ -115,12 +140,13 @@ body {
 /* Left palette */
 .component-palette {
   width:260px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  background: var(--glass);
   border-radius:var(--radius);
   padding:14px;
   border:1px solid var(--card-border);
   box-shadow: var(--soft-shadow);
   overflow:auto;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 /* Canvas center */
@@ -132,47 +158,48 @@ body {
   box-shadow: var(--shadow);
   position:relative;
   overflow:hidden;
-  background:
-    linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00)),
-    radial-gradient(circle at 20% 20%, rgba(124,92,255,0.02), transparent 10%),
-    repeating-linear-gradient(transparent 0 24px, rgba(255,255,255,0.01) 24px 25px);
+  background: var(--panel);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+[data-theme="light"] .canvas-container {
+  background: 
+    linear-gradient(180deg, rgba(0,0,0,0.01), rgba(0,0,0,0.00)),
+    radial-gradient(circle at 20% 20%, rgba(124,92,255,0.03), transparent 10%),
+    repeating-linear-gradient(transparent 0 24px, rgba(0,0,0,0.02) 24px 25px);
 }
 
 /* Top-left info card */
 .canvas-info {
-  background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+  background: var(--glass);
   padding:10px 12px;
   border-radius:10px;
   border:1px solid var(--card-border);
-  color:var(--white);
-  box-shadow:0 6px 18px rgba(2,6,23,0.4);
+  color:var(--text-primary);
+  box-shadow: var(--soft-shadow);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 /* Right sidebar */
 .sidebar {
   width:340px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  background: var(--glass);
   border-radius:var(--radius);
   padding:16px;
   border:1px solid var(--card-border);
   box-shadow: var(--soft-shadow);
   overflow:auto;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 
-/* Notifications */
-.notification {
-  position:fixed;
-  top:84px;
-  right:24px;
-  z-index:1100;
-  padding:12px 16px;
-  border-radius:10px;
-  color:white;
-  font-weight:600;
-}
+/* Old notification styles removed - using ToastNotification component instead */
 
 /* Info styles */
-.info-item { font-size:13px; color:var(--muted); }
+.info-item { 
+  font-size:13px; 
+  color:var(--text-secondary);
+  transition: color 0.3s ease;
+}
 .palette-item { margin-bottom:12px; }
 
 /* ReactFlow nodes: make them only show our node content */
@@ -184,21 +211,78 @@ body {
 
 /* ReactFlow controls / minimap and small boxes -> dark */
 .react-flow__minimap {
-  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
-  border: 1px solid rgba(255,255,255,0.04);
+  background: linear-gradient(180deg, rgba(11, 15, 20, 0.95), rgba(15, 20, 25, 0.95));
+  border: 1px solid rgba(102, 126, 234, 0.3);
   box-shadow: 0 8px 20px rgba(2,6,23,0.6);
   border-radius: 8px;
   padding: 6px;
 }
+
+/* Minimap background */
+.react-flow__minimap svg {
+  background: rgba(11, 15, 20, 0.95);
+  border-radius: 4px;
+}
+
 .react-flow__minimap svg rect {
   fill: rgba(255,255,255,0.02) !important;
   stroke: rgba(255,255,255,0.03) !important;
 }
+
+/* Minimap nodes - make them highly visible */
+.react-flow__minimap .react-flow__node {
+  fill: #667eea !important;
+  stroke: #ffffff !important;
+  stroke-width: 2px !important;
+  opacity: 1 !important;
+}
+
+.react-flow__minimap .react-flow__node rect {
+  fill: #667eea !important;
+  stroke: #ffffff !important;
+  stroke-width: 2px !important;
+}
+
+.react-flow__minimap .react-flow__node circle {
+  fill: #667eea !important;
+  stroke: #ffffff !important;
+  stroke-width: 2px !important;
+}
+
+/* Minimap edges - make them highly visible */
+.react-flow__minimap .react-flow__edge-path {
+  stroke: #667eea !important;
+  stroke-width: 2.5px !important;
+  opacity: 0.9 !important;
+}
+
+.react-flow__minimap .react-flow__edge {
+  stroke: #667eea !important;
+}
+
+.react-flow__minimap path {
+  stroke: #667eea !important;
+  stroke-width: 2.5px !important;
+  fill: none !important;
+  opacity: 0.9 !important;
+}
+
+.react-flow__minimap .react-flow__edge-text {
+  display: none !important;
+}
+
+/* Minimap mask - ensure viewport is visible */
+.react-flow__minimap-mask {
+  fill: rgba(102, 126, 234, 0.15) !important;
+  stroke: rgba(102, 126, 234, 0.9) !important;
+  stroke-width: 2px !important;
+}
 .react-flow__controls {
-  background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
-  border: 1px solid rgba(255,255,255,0.03);
-  box-shadow: 0 6px 18px rgba(2,6,23,0.5);
+  background: var(--glass);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--soft-shadow);
   border-radius: 8px;
+  transition: background 0.3s ease, border-color 0.3s ease;
 }
 .react-flow__attribution {
   display:none; /* hide small credit box */

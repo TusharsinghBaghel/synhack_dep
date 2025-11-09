@@ -107,7 +107,7 @@ const EvaluationPanel = ({ evaluation, onClose }) => {
     <div className="evaluation-overlay">
       <div className="evaluation-panel">
         <div className="evaluation-header">
-          <h2>📊 Architecture Evaluation</h2>
+          <h2>📊 Architecture Evaluation {evaluation.isAiMode && <span className="ai-badge">AI</span>}</h2>
           <button className="close-btn" onClick={onClose}>×</button>
         </div>
 

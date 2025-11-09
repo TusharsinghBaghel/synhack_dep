@@ -70,7 +70,7 @@ function PostQuestionModal({ onClose, onSuccess, token }) {
           {error && <div className="modal-error">{error}</div>}
 
           <div className="form-group">
-            <label>Question Title</label>
+            <label color="#000e26">Question Title</label>
             <input
               type="text"
               value={qtitle}

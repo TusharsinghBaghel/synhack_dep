@@ -14,6 +14,9 @@ public abstract class Component {
     private HeuristicProfile heuristics = new HeuristicProfile();
     private Map<String, Object> properties = new HashMap<>();
 
+    // Canvas position for UI reconstruction
+    private CanvasPosition position;
+
     public Component() {}
 
     public Component(String id, String name) {
@@ -23,4 +26,18 @@ public abstract class Component {
 
     // Each concrete class must define its component type
     public abstract ComponentType getType();
+
+    @Getter
+    @Setter
+    public static class CanvasPosition {
+        private double x;
+        private double y;
+
+        public CanvasPosition() {}
+
+        public CanvasPosition(double x, double y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
 }

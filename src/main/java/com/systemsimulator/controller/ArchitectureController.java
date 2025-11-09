@@ -73,7 +73,16 @@ public class ArchitectureController {
      */
     @PostMapping
     public ResponseEntity<Architecture> createArchitecture(@RequestBody ArchitectureRequest request) {
-        Architecture architecture = architectureService.createArchitecture(request.getName());
+        logger.info("Received create architecture request");
+        logger.info("Request object: {}", request);
+        logger.info("Request name: {}", request != null ? request.getName() : "null");
+        
+        String name = (request != null && request.getName() != null && !request.getName().trim().isEmpty()) 
+            ? request.getName().trim() 
+            : "My Architecture";
+        logger.info("Creating architecture with name: '{}'", name);
+        Architecture architecture = architectureService.createArchitecture(name);
+        logger.info("Created architecture with ID: {} and name: '{}'", architecture.getId(), architecture.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(architecture);
     }
 
@@ -213,7 +222,7 @@ public class ArchitectureController {
      * Get architectures by user ID
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Architecture>> getArchitecturesByUserId(@PathVariable Integer userId) {
+    public ResponseEntity<List<Architecture>> getArchitecturesByUserId(@PathVariable String userId) {
         return ResponseEntity.ok(architectureService.getArchitecturesByUserId(userId));
     }
 
@@ -221,7 +230,7 @@ public class ArchitectureController {
      * Get architectures by question ID
      */
     @GetMapping("/question/{questionId}")
-    public ResponseEntity<List<Architecture>> getArchitecturesByQuestionId(@PathVariable Integer questionId) {
+    public ResponseEntity<List<Architecture>> getArchitecturesByQuestionId(@PathVariable String questionId) {
         return ResponseEntity.ok(architectureService.getArchitecturesByQuestionId(questionId));
     }
 
@@ -234,6 +243,37 @@ public class ArchitectureController {
     }
 
     /**
+     * Update architecture (e.g., name)
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateArchitecture(
+            @PathVariable String id,
+            @RequestBody ArchitectureRequest request) {
+
+        var optionalArch = architectureService.getArchitectureById(id);
+        if (optionalArch.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse("Architecture not found: " + id));
+        }
+
+        Architecture arch = optionalArch.get();
+        logger.info("Current architecture name: '{}'", arch.getName());
+        
+        if (request != null && request.getName() != null && !request.getName().trim().isEmpty()) {
+            String newName = request.getName().trim();
+            logger.info("Updating architecture name from '{}' to '{}'", arch.getName(), newName);
+            arch.setName(newName);
+            arch.setUpdatedAt(java.time.LocalDateTime.now());
+        } else {
+            logger.warn("Update request has null or empty name, keeping existing name: '{}'", arch.getName());
+        }
+
+        Architecture updated = architectureService.saveArchitecture(arch);
+        logger.info("Updated architecture name: '{}'", updated.getName());
+        return ResponseEntity.ok(updated);
+    }
+
+    /**
      * Delete architecture
      */
     @DeleteMapping("/{id}")
@@ -243,6 +283,25 @@ public class ArchitectureController {
         }
         architectureService.deleteArchitecture(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Copy/Clone an architecture (for solution reconstruction)
+     */
+    @PostMapping("/{id}/copy")
+    public ResponseEntity<?> copyArchitecture(
+            @PathVariable String id,
+            @RequestBody(required = false) ArchitectureRequest request) {
+        try {
+            String newName = (request != null && request.getName() != null)
+                ? request.getName()
+                : null;
+            Architecture copied = architectureService.copyArchitecture(id, newName);
+            return ResponseEntity.status(HttpStatus.CREATED).body(copied);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(e.getMessage()));
+        }
     }
 
     /**
@@ -278,14 +337,14 @@ public class ArchitectureController {
     }
 
     public static class SubmitRequest {
-        private Integer userId;
-        private Integer questionId;
+        private String userId;
+        private String questionId;
 
-        public Integer getUserId() { return userId; }
-        public void setUserId(Integer userId) { this.userId = userId; }
+        public String getUserId() { return userId; }
+        public void setUserId(String userId) { this.userId = userId; }
 
-        public Integer getQuestionId() { return questionId; }
-        public void setQuestionId(Integer questionId) { this.questionId = questionId; }
+        public String getQuestionId() { return questionId; }
+        public void setQuestionId(String questionId) { this.questionId = questionId; }
     }
 
     public static class ComparisonRequest {

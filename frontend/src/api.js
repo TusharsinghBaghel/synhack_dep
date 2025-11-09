@@ -1,13 +1,37 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'https://synchack-production.up.railway.app/api';
+// const API_BASE_URL = 'http://localhost:8080/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: false, // Set to false if backend doesn't use credentials
 });
+
+// Add request interceptor to handle CORS
+api.interceptors.request.use(
+  (config) => {
+    // Add any additional headers if needed
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 0 || error.code === 'ERR_NETWORK') {
+      console.error('CORS or Network Error:', error);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Component APIs
 export const componentAPI = {
@@ -51,6 +75,7 @@ export const architectureAPI = {
   compare: (data) => api.post('/architecture/compare', data),
   validate: (id) => api.post(`/architecture/${id}/validate`),
   submit: (id, data) => api.post(`/architecture/${id}/submit`, data),
+  copy: (id, data) => api.post(`/architecture/${id}/copy`, data),
   getByUser: (userId) => api.get(`/architecture/user/${userId}`),
   getByQuestion: (questionId) => api.get(`/architecture/question/${questionId}`),
   getSubmitted: () => api.get('/architecture/submitted'),

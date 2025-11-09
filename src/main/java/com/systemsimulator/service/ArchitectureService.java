@@ -107,9 +107,108 @@ public class ArchitectureService {
     }
 
     /**
+     * Copy/Clone an architecture (for solution reconstruction)
+     */
+    public Architecture copyArchitecture(String sourceId, String newName) {
+        Architecture source = getArchitectureById(sourceId)
+                .orElseThrow(() -> new IllegalArgumentException("Architecture not found: " + sourceId));
+
+        // Create new architecture with copied data
+        String newId = UUID.randomUUID().toString();
+        String name = (newName != null && !newName.trim().isEmpty())
+            ? newName.trim()
+            : source.getName() + " (Copy)";
+
+        Architecture copy = new Architecture(newId, name);
+
+        // Create a mapping from old component IDs to new copied components
+        Map<String, Component> oldToNew = new HashMap<>();
+
+        // Deep copy components (including positions)
+        for (Component original : source.getComponents()) {
+            Component cloned = copyComponent(original);
+            copy.addComponent(cloned);
+            oldToNew.put(original.getId(), cloned);
+        }
+
+        // Deep copy links with updated component references
+        for (Link originalLink : source.getLinks()) {
+            if (originalLink.getSource() == null || originalLink.getTarget() == null) continue;
+            Component newSrc = oldToNew.get(originalLink.getSourceId());
+            Component newTgt = oldToNew.get(originalLink.getTargetId());
+            if (newSrc != null && newTgt != null) {
+                Link clonedLink = copyLink(originalLink, newSrc, newTgt);
+                copy.addLink(clonedLink);
+            } else {
+                logger.warn("Skipping link copy; missing remapped components. linkId={} src={} tgt={}",
+                        originalLink.getId(), originalLink.getSourceId(), originalLink.getTargetId());
+            }
+        }
+
+        // Don't copy userId, questionId, or submitted status
+        // This is a new draft architecture
+
+        return architectureRepository.save(copy);
+    }
+
+    /**
+     * Deep copy a component
+     */
+    private Component copyComponent(Component source) {
+        try {
+            Component copy = source.getClass().getDeclaredConstructor().newInstance();
+            copy.setId(UUID.randomUUID().toString());
+            copy.setName(source.getName());
+
+            // Copy heuristics
+            HeuristicProfile heuristicsCopy = new HeuristicProfile();
+            if (source.getHeuristics() != null && source.getHeuristics().getScores() != null) {
+                heuristicsCopy.setScores(new HashMap<>(source.getHeuristics().getScores()));
+            }
+            copy.setHeuristics(heuristicsCopy);
+
+            // Copy properties
+            copy.setProperties(new HashMap<>(source.getProperties()));
+
+            // Copy position (CRITICAL for canvas reconstruction)
+            if (source.getPosition() != null) {
+                copy.setPosition(new Component.CanvasPosition(
+                    source.getPosition().getX(),
+                    source.getPosition().getY()
+                ));
+            }
+
+            return copy;
+        } catch (Exception e) {
+            logger.error("Failed to create component copy", e);
+            throw new RuntimeException("Failed to copy component", e);
+        }
+    }
+
+    /**
+     * Deep copy a link with updated component references
+     */
+    private Link copyLink(Link source, Component newSource, Component newTarget) {
+        Link copy = new Link();
+        copy.setId(UUID.randomUUID().toString());
+        copy.setSource(newSource); // sets sourceId internally
+        copy.setTarget(newTarget); // sets targetId internally
+        copy.setType(source.getType());
+
+        // Copy heuristics
+        HeuristicProfile heuristicsCopy = new HeuristicProfile();
+        if (source.getHeuristics() != null && source.getHeuristics().getScores() != null) {
+            heuristicsCopy.setScores(new HashMap<>(source.getHeuristics().getScores()));
+        }
+        copy.setHeuristics(heuristicsCopy);
+
+        return copy;
+    }
+
+    /**
      * Submit architecture to MongoDB with userId and questionId
      */
-    public Architecture submitArchitecture(String architectureId, Integer userId, Integer questionId) {
+    public Architecture submitArchitecture(String architectureId, String userId, String questionId) {
         logger.info("========== SUBMIT ARCHITECTURE STARTED ==========");
         logger.info("Architecture ID: {}", architectureId);
         logger.info("User ID: {}", userId);
@@ -185,14 +284,14 @@ public class ArchitectureService {
     /**
      * Get architectures by user ID
      */
-    public List<Architecture> getArchitecturesByUserId(Integer userId) {
+    public List<Architecture> getArchitecturesByUserId(String userId) {
         return architectureRepository.findByUserId(userId);
     }
 
     /**
      * Get architectures by question ID
      */
-    public List<Architecture> getArchitecturesByQuestionId(Integer questionId) {
+    public List<Architecture> getArchitecturesByQuestionId(String questionId) {
         return architectureRepository.findByQuestionId(questionId);
     }
 

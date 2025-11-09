@@ -44,6 +44,10 @@ public class LinkService {
 
         Link link = new Link(id, source, target, linkType);
 
+         // Ensure explicit IDs are set
+        link.setSource(source);
+        link.setTarget(target);
+
         // Initialize default heuristics for the link type
         HeuristicProfile heuristics = heuristicService.getDefaultHeuristicsForLinkType(linkType);
         link.setHeuristics(heuristics);
@@ -103,6 +107,8 @@ public class LinkService {
      * Save or update a link
      */
     public Link saveLink(Link link) {
+        if (link.getSource() != null) link.setSource(link.getSource());
+        if (link.getTarget() != null) link.setTarget(link.getTarget());
         return linkRepository.save(link);
     }
 

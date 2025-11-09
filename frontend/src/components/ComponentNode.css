@@ -189,9 +189,65 @@
   font-size:11px;
   font-weight:800;
   color:var(--accent-3);
-  text-transform:uppercase;
-  letter-spacing:0.6px;
+  text-transform:none;
+  letter-spacing:0.3px;
   text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+  text-align: center;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+/* Component node text container */
+.component-node-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  max-width: 120px;
+  text-align: center;
+}
+
+/* Component type (Database, Cache, etc.) */
+.component-type-text {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent-3);
+  text-transform: none;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  display: block;
+}
+
+/* Subtype inline in parentheses */
+.component-subtype-inline {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 10px;
+}
+
+/* Component name (custom label) */
+.component-name-text {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: none;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: 100%;
+  margin-top: 1px;
+  margin-bottom: 4px;
 }
 
 /* connection handles (top & bottom) */

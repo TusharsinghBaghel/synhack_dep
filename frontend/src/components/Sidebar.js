@@ -1,7 +1,52 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import './Sidebar.css';
 
-const Sidebar = ({ selectedNode, selectedEdge, onDeleteNode, onDeleteEdge, previewedSubtype }) => {
+const API_BASE = 'http://localhost:3000';
+
+const Sidebar = ({ selectedNode, selectedEdge, onDeleteNode, onDeleteEdge, previewedSubtype, onQuestionClick }) => {
+  const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState('questions'); // 'details' or 'questions'
+  const [myQuestions, setMyQuestions] = useState([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+
+  // Fetch user's questions
+  useEffect(() => {
+    const fetchMyQuestions = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        setLoadingQuestions(true);
+        const response = await axios.get(`${API_BASE}/questions/my`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setMyQuestions(response.data.questions || []);
+      } catch (err) {
+        console.error('Failed to fetch questions:', err);
+        setMyQuestions([]);
+      } finally {
+        setLoadingQuestions(false);
+      }
+    };
+
+    // Always fetch questions when component mounts or when switching to questions view
+    if (viewMode === 'questions') {
+      fetchMyQuestions();
+    }
+  }, [viewMode]);
+
+  // Auto-switch to questions view when no component/edge is selected
+  useEffect(() => {
+    if (!selectedNode && !selectedEdge && !previewedSubtype) {
+      // Always show questions when nothing is selected
+      setViewMode('questions');
+    }
+    // Note: When a component/edge is selected, we show details by default
+    // but user can manually click "Questions" button to switch to questions view
+  }, [selectedNode, selectedEdge, previewedSubtype]);
+
   // If a preview is active, prefer it — this ensures heuristics from the palette
   // are immediately visible even if a canvas node was previously selected.
   const isPreviewActive = !!previewedSubtype;
@@ -17,15 +62,52 @@ const Sidebar = ({ selectedNode, selectedEdge, onDeleteNode, onDeleteEdge, previ
 
   const effectiveNode = isPreviewActive ? previewNode : selectedNode || null;
 
-  if (!effectiveNode && !selectedEdge) {
+  // Show questions view
+  if (viewMode === 'questions') {
     return (
       <div className="sidebar">
-        <div className="sidebar-empty">
-          <p>👈 Select a component or connection to view details</p>
+        <div className="sidebar-header">
+          <h3>My Questions</h3>
+        </div>
+        <div className="sidebar-content">
+          {loadingQuestions ? (
+            <div className="sidebar-empty">
+              <p>Loading questions...</p>
+            </div>
+          ) : myQuestions.length === 0 ? (
+            <div className="sidebar-empty">
+              <p>📝 No questions posted yet</p>
+            </div>
+          ) : (
+            <div className="questions-list">
+              {myQuestions.map((q) => (
+                <div
+                  key={q._id}
+                  className="question-item"
+                  onClick={() => {
+                    if (onQuestionClick) {
+                      onQuestionClick(q._id);
+                    } else {
+                      navigate(`/question/${q._id}`);
+                    }
+                  }}
+                >
+                  <div className="question-item-content">
+                    <h4 className="question-title">{q.qtitle}</h4>
+                    <small className="question-date">
+                      {new Date(q.createdAt).toLocaleDateString()}
+                    </small>
+                  </div>
+                  <span className="question-arrow">→</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     );
   }
+
 
   if (effectiveNode) {
     const node = effectiveNode;
@@ -36,6 +118,13 @@ const Sidebar = ({ selectedNode, selectedEdge, onDeleteNode, onDeleteEdge, previ
       <div className="sidebar">
         <div className="sidebar-header">
           <h3>Component Details</h3>
+          <button
+            className="toggle-btn"
+            onClick={() => setViewMode('questions')}
+            style={{ marginLeft: 'auto' }}
+          >
+            Questions
+          </button>
         </div>
         <div className="sidebar-content">
           <div className="detail-section">
@@ -140,6 +229,13 @@ const Sidebar = ({ selectedNode, selectedEdge, onDeleteNode, onDeleteEdge, previ
       <div className="sidebar">
         <div className="sidebar-header">
           <h3>Connection Details</h3>
+          <button
+            className="toggle-btn"
+            onClick={() => setViewMode('questions')}
+            style={{ marginLeft: 'auto' }}
+          >
+            Questions
+          </button>
         </div>
         <div className="sidebar-content">
           <div className="detail-section">

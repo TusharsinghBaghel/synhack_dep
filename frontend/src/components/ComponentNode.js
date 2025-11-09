@@ -31,12 +31,36 @@ const ComponentNode = ({ id, data }) => {
   const isPreview = String(id || '').startsWith('preview-');
   const type = (data?.componentType || '').toUpperCase();
   const SubIcon = ICON_MAP[type] || FaGlobe;
-  const subtypeLabel = data?.subtype || data?.properties?.subtype || data?.label || '';
+  
+  // Get the display name (label) and subtype separately
+  const displayName = data?.label || '';
+  const subtype = data?.subtype || data?.properties?.subtype || '';
+  
+  // Format the name properly (remove underscores, capitalize properly)
+  const formattedName = String(displayName)
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+  
+  // Format the subtype properly
+  const formattedSubtype = String(subtype)
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+  
+  // Format the component type (Database, Cache, etc.)
+  const formattedType = String(type)
+    .replace(/_/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 
   return (
     <div
       className={`component-node-icon ${isPreview ? 'preview' : 'real'}`}
-      title={data?.label || subtypeLabel}
+      title={`${formattedType}${formattedSubtype ? ` (${formattedSubtype})` : ''}${formattedName ? ` - ${formattedName}` : ''}`}
       data-node-id={id}
     >
       {/* top target handle (visible & connectable) */}
@@ -54,8 +78,18 @@ const ComponentNode = ({ id, data }) => {
         <SubIcon className={`node-icon`} />
       </div>
 
-      <div className="subtype-text">
-        {String(subtypeLabel).replace(/_/g, ' ').toUpperCase()}
+      <div className="component-node-text">
+        <div className="component-type-text">
+          {formattedType}
+          {formattedSubtype && (
+            <span className="component-subtype-inline"> ({formattedSubtype})</span>
+          )}
+        </div>
+        {formattedName && (
+          <div className="component-name-text">
+            {formattedName}
+          </div>
+        )}
       </div>
 
       {/* bottom source handle (visible & connectable) */}

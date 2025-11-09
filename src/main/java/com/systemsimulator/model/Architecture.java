@@ -19,9 +19,9 @@ public class Architecture {
     private List<Component> components = new ArrayList<>();
     private List<Link> links = new ArrayList<>();
 
-    // Foreign keys
-    private Integer userId;
-    private Integer questionId;
+    // Foreign keys - Using String to store MongoDB ObjectId
+    private String userId;
+    private String questionId;
 
     // Metadata
     private LocalDateTime createdAt;

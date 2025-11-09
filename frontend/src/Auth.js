@@ -41,7 +41,7 @@ function Auth() {
     <div className="auth-container">
       {/* Brand Header */}
       <div className="auth-brand">
-        <h1>Architex</h1>
+        <h1>ArchiteX</h1>
         <div className="brand-subtitle">Design · Build · Innovate</div>
       </div>
 

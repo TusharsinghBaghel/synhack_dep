@@ -9,11 +9,11 @@ import java.util.List;
 @Repository
 public interface ArchitectureRepository extends MongoRepository<Architecture, String> {
 
-    List<Architecture> findByUserId(Integer userId);
+    List<Architecture> findByUserId(String userId);
 
-    List<Architecture> findByQuestionId(Integer questionId);
+    List<Architecture> findByQuestionId(String questionId);
 
-    List<Architecture> findByUserIdAndQuestionId(Integer userId, Integer questionId);
+    List<Architecture> findByUserIdAndQuestionId(String userId, String questionId);
 
     List<Architecture> findBySubmittedTrue();
 }

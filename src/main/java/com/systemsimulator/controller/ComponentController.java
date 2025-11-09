@@ -71,6 +71,14 @@ public class ComponentController {
                     request.getProperties() != null ? request.getProperties() : Map.of()
             );
 
+            // Set position if provided
+            if (request.getPosition() != null) {
+                component.setPosition(new Component.CanvasPosition(
+                    request.getPosition().getX(),
+                    request.getPosition().getY()
+                ));
+            }
+
             logger.info("Successfully created component: id={}, type={}, name={}", id, request.getType(), request.getName());
             return ResponseEntity.status(HttpStatus.CREATED).body(component);
         } catch (Exception e) {
@@ -196,6 +204,7 @@ public class ComponentController {
         private ComponentType type;
         private String name;
         private Map<String, Object> properties;
+        private PositionRequest position;
 
         public ComponentType getType() { return type; }
         public void setType(ComponentType type) { this.type = type; }
@@ -205,6 +214,20 @@ public class ComponentController {
 
         public Map<String, Object> getProperties() { return properties; }
         public void setProperties(Map<String, Object> properties) { this.properties = properties; }
+
+        public PositionRequest getPosition() { return position; }
+        public void setPosition(PositionRequest position) { this.position = position; }
+    }
+
+    public static class PositionRequest {
+        private double x;
+        private double y;
+
+        public double getX() { return x; }
+        public void setX(double x) { this.x = x; }
+
+        public double getY() { return y; }
+        public void setY(double y) { this.y = y; }
     }
 
     public static class ErrorResponse {
