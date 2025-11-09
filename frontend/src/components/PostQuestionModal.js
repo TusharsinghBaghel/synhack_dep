@@ -3,7 +3,8 @@ import React, { useState } from "react";
 import axios from "axios";
 import "./PostQuestionModal.css";
 
-const API_BASE = "http://localhost:3000";
+// const API_BASE = "http://localhost:3000";
+const API_BASE = 'https://synhack-dep.onrender.com';
 
 function PostQuestionModal({ onClose, onSuccess, token }) {
   const [qtitle, setQtitle] = useState("");

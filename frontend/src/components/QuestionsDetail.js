@@ -9,7 +9,8 @@ import UserProfileModal from "./UserProfileModal";
 import SolutionsViewer from "./SolutionsViewer";
 import "./QuestionsDetail.css";
 
-const API_BASE = "http://localhost:3000";
+// const API_BASE = "http://localhost:3000";
+const API_BASE = 'https://synhack-dep.onrender.com';
 
 function QuestionDetail() {
   const { id } = useParams();

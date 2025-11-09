@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Sidebar.css';
 
-const API_BASE = 'http://localhost:3000';
+// const API_BASE = 'http://localhost:3000';
+const API_BASE = 'https://synhack-dep.onrender.com';
 
 const Sidebar = ({ selectedNode, selectedEdge, onDeleteNode, onDeleteEdge, previewedSubtype, onQuestionClick }) => {
   const navigate = useNavigate();
