@@ -10,7 +10,8 @@ import UserProfileModal from "./components/UserProfileModal";
 import App from "./App"; // Import your existing App.js directly
 import "./Home.css";
 
-const API_BASE = "http://localhost:3000";
+// const API_BASE = "http://localhost:3000";
+const API_BASE = 'https://synhack-dep.onrender.com';
 
 function Home() {
   const [questions, setQuestions] = useState([]);

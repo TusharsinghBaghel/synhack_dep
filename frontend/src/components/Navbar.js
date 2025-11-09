@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Navbar.css";
 
-const API_BASE = "http://localhost:3000";
+// const API_BASE = "http://localhost:3000";
+const API_BASE = 'https://synhack-dep.onrender.com';
 
 function Navbar({ onRandomQuestion, onPostQuestion, onOpenProfile }) {
   const navigate = useNavigate();
