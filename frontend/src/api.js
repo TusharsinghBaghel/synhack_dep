@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://synchack-production.up.railway.app/api';
+const API_BASE_URL = 'https://synchackdep-production.up.railway.app/api';
 // const API_BASE_URL = 'http://localhost:8080/api';
 
 const api = axios.create({
