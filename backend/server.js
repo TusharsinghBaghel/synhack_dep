@@ -207,7 +207,7 @@ app.get("/auth/google", (req, res) => {
     access_type: "offline",
     scope: ["openid", "email", "profile"],
     prompt: "consent",
-    redirect_uri:"http://localhost:3000/auth/google/callback"
+    redirect_uri:"https://synhack-dep.onrender.com/auth/google/callback"
   });
   res.redirect(authUrl);
 });
