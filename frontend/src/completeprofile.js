@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import "./Auth.css";
 
-const API_BASE = "http://localhost:3000";
+const API_BASE = 'https://synhack-dep.onrender.com';
 
 function CompleteProfile() {
   const navigate = useNavigate();
@@ -87,3 +87,4 @@ function CompleteProfile() {
 }
 
 export default CompleteProfile;
+
