@@ -45,7 +45,7 @@ if (!process.env.GOOGLE_CLIENT_ID) {
 const googleClient = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.CLIENT_SECRET,
-  "http://localhost:3000/auth/google/callback"    
+  "https://synhack-dep.onrender.com/auth/google/callback"    
 );
 
 
