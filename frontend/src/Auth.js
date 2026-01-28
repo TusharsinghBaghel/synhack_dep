@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import "./Auth.css";
 
-const API_BASE = "http://localhost:3000";      // BACKEND
+const API_BASE = 'https://synhack-dep.onrender.com';      // BACKEND
 const FRONTEND_BASE = "https://www.systemarchi.tech/"; // FRONTEND
 
 function Auth() {
